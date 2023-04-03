@@ -12,10 +12,11 @@ use PHPThisshop\Exception\SdkException;
 class ThisshopSDK
 {
     public array $config = [
-        'thisshopkUrl'  => '',
-        'appId'         => '',
-        'token'         => '',
-        'method'        => '',
+        'thisshopkUrl' => '',
+        'appId'        => '',
+        'appSecret'    => '',
+        'token'        => '',
+        'method'       => '',
     ];
 
     public function __construct(array $config)

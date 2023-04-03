@@ -6,6 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class Api
 {
@@ -17,7 +18,11 @@ class Api
 
     protected $queryString = [];
 
-    protected $commonQueryString = [];
+    protected $commonParameters = [];
+
+    protected $data = '';
+
+    protected string $method = '';
 
     protected $timestamp;
 
@@ -49,6 +54,7 @@ class Api
     public function __construct(ThisshopSDK $thisshopSDK)
     {
         $this->thisshopSDK = $thisshopSDK;
+        $this->setHttpClient();
     }
 
     /**
@@ -161,7 +167,7 @@ class Api
      */
     public function withQueryString(array $queryString)
     {
-        $this->queryString  = $queryString;
+        $this->queryString = $queryString;
         return $this;
     }
 
@@ -252,13 +258,49 @@ class Api
         return $this->response = $response;
     }
 
+    /**
+     * @Author: hwj
+     * @DateTime: 2023/4/3 16:07
+     * @param string $uri
+     * @return static
+     */
+    public function withUri(string $uri)
+    {
+        $this->uri = $uri;
+        return $this;
+    }
+
+    /**
+     * @Author: hwj
+     * @DateTime: 2023/4/3 16:40
+     * @param string $method
+     * @return static
+     */
+    public function withMethod(string $method)
+    {
+        $this->method = $method;
+        return $this;
+    }
+
+    /**
+     * @Author: hwj
+     * @DateTime: 2023/4/3 16:47
+     * @param array $data
+     * @return static
+     */
+    public function withData(array $data)
+    {
+        $this->data = $data;
+        return $this;
+    }
+
     public function fullUrl()
     {
         $this->generateUrl();
         return $this->fullUrl = sprintf('%s%s?%s', ...[
             $this->url,
             $this->uri,
-            http_build_query(array_merge($this->queryString?? [], $this->commonQueryString))
+            http_build_query($this->queryString?? [])
         ]);
     }
 
@@ -269,9 +311,9 @@ class Api
      */
     protected function generateUrl()
     {
-        $this->uri = strpos($this->childResources, '/') === 0? $this->childResources: $this->parentResource . '/' . $this->childResources;
-        $this->url = $this->tiktokSDK->config['tiktokUrl'];
-        $this->timestamp = time();
+        $this->uri = $this->uri?: '/api/shop/router/rest';
+        $this->url = $this->thisshopSDK->config['thisshopkUrl'];
+        $this->timestamp = round(microtime(true) * 1000);
         $this->setApiCommonParameters();
         return $this;
     }
@@ -283,37 +325,30 @@ class Api
      */
     protected function setApiCommonParameters()
     {
-        $tiktokSDK = &$this->tiktokSDK;
+        $thisshopSDK = &$this->thisshopSDK;
 
-        $signArr = array_merge($this->queryString, array_filter([
-            'app_key'   => $tiktokSDK->config['appKey'],
+        $signArr = array_filter([
+            'appId'     => $thisshopSDK->config['appId'],
+            'method'    => $this->method,
+            'nonce'     => Str::uuid(),
+            'token'     => $thisshopSDK->config['token'],
             'timestamp' => $this->timestamp,
-            'shop_id'   => $tiktokSDK->config['shopId'],
-        ]));
+            'data'      => json_encode($this->data),
+        ]);
 
         uksort($signArr, 'strcmp');
 
-        $signStr = sprintf('%s%s%s%s', ...[
-            $tiktokSDK->config['appSecret'],
-            $this->uri,
-            (function ($signArr) {
-                $signStr = '';
-                foreach ($signArr as $key => &$val) {
-                    $signStr .= $key . $val;
-                }
+        $signStr = '';
+        foreach ($signArr as $key => $val) {
+            $signStr .= sprintf('%s=%s', $key, urlencode($val));
+        }
 
-                return $signStr;
-            })($signArr),
-            $tiktokSDK->config['appSecret']
+        $this->commonParameters = array_merge($signArr, [
+            'sign' => $this->generateSign($signStr, $thisshopSDK->config['appSecret']),
+            'data' => $this->data,
         ]);
 
-        $this->commonQueryString = array_filter([
-            'app_key'      => $tiktokSDK->config['appKey'],
-            'timestamp'    => $this->timestamp,
-            'access_token' => $tiktokSDK->config['accessToken'],
-            'shop_id'      => $tiktokSDK->config['shopId'],
-            'sign'         => $this->generateSign($signStr, $tiktokSDK->config['appSecret']),
-        ]);
+        $this->httpClient()->withBody(json_encode($this->commonParameters), 'application/json');
     }
 
     /**
@@ -326,6 +361,6 @@ class Api
      */
     protected function generateSign($had, $key)
     {
-        return bin2hex(hash_hmac('sha256', $had, $key,true));
+        return strtoupper(md5($had . $key));
     }
 }

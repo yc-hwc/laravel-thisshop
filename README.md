@@ -14,6 +14,7 @@ composer require yc-hwc/laravel-thisshop
     $config = [
         'thisshopkUrl'  => '',
         'appId'         => '',
+        'appSecret'     => '',
         'token'         => '',
         'method'        => '',
     ];
