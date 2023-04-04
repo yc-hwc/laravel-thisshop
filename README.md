@@ -30,6 +30,8 @@ composer require yc-hwc/laravel-thisshop
     ];
 
     $thisshopSDK = \PHPThisshop\ThisshopSDK::config($config);
+    $response = $thisshopSDK->accessToken()->post();
+    print_r($response);
 ````
 #### [token校验](https://help.thisshop.com/article/detail/tiakiseg)
 ````
@@ -41,6 +43,8 @@ composer require yc-hwc/laravel-thisshop
     ];
 
     $thisshopSDK = \PHPThisshop\ThisshopSDK::config($config);
+    $response = $thisshopSDK->tokenCheck()->post();
+    print_r($response);
 ````
 #### [订单列表Order list ](https://help.thisshop.com/article/detail/fvkctjne)
 ````
