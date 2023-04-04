@@ -1,6 +1,6 @@
 <?php
 
-namespace PHPThisshop;
+namespace PHPThisshop\Traits;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -8,7 +8,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
-class Api
+trait Api
 {
     public $url;
 
@@ -22,7 +22,7 @@ class Api
 
     protected $data = '';
 
-    protected string $method = '';
+    protected $method = '';
 
     protected $timestamp;
 
@@ -48,14 +48,6 @@ class Api
     protected $options = [
         'verify' => false
     ];
-
-    protected ThisshopSDK $thisshopSDK;
-
-    public function __construct(ThisshopSDK $thisshopSDK)
-    {
-        $this->thisshopSDK = $thisshopSDK;
-        $this->setHttpClient();
-    }
 
     /**
      * @Author: hwj
@@ -311,7 +303,7 @@ class Api
      */
     protected function generateUrl()
     {
-        $this->uri = $this->uri?: '/api/shop/router/rest';
+        $this->uri = $this->uri?: $this->path;
         $this->url = $this->thisshopSDK->config['thisshopkUrl'];
         $this->timestamp = round(microtime(true) * 1000);
         $this->setApiCommonParameters();
@@ -333,18 +325,20 @@ class Api
             'nonce'     => Str::uuid(),
             'token'     => $thisshopSDK->config['token'],
             'timestamp' => $this->timestamp,
-            'data'      => json_encode($this->data),
+            'data'      => $this->data? json_encode($this->data): '',
         ]);
 
         uksort($signArr, 'strcmp');
 
         $signStr = '';
         foreach ($signArr as $key => $val) {
-            $signStr .= sprintf('%s=%s', $key, urlencode($val));
+            $signStr .= sprintf('%s=%s',urlencode($key), urlencode($val));
         }
 
+        $signStr .= $thisshopSDK->config['signSecret'];
+
         $this->commonParameters = array_filter(array_merge($signArr, [
-            'sign' => $this->generateSign($signStr, $thisshopSDK->config['appSecret']),
+            'sign' => $this->generateSign($signStr),
             'data' => $this->data,
         ]));
 
@@ -356,11 +350,10 @@ class Api
      * @Author: hwj
      * @DateTime: 2022/4/23 11:22
      * @param $had
-     * @param $key
      * @return string
      */
-    protected function generateSign($had, $key)
+    protected function generateSign($had)
     {
-        return strtoupper(md5($had . $key));
+        return strtoupper(md5($had));
     }
 }

@@ -12,12 +12,51 @@ composer require yc-hwc/laravel-thisshop
 #### 配置
 ````
     $config = [
-        'thisshopkUrl'  => '',
-        'appId'         => '',
-        'appSecret'     => '',
-        'token'         => '',
-        'method'        => '',
+       'thisshopkUrl' => '',
+       'appId'        => '',
+       'appSecret'    => '',
+       'signSecret'   => '',
+       'token'        => '',
     ];
-    
+
     $thisshopSDK = \PHPThisshop\ThisshopSDK::config($config);
+````
+#### [token获取](https://help.thisshop.com/article/detail/tiakiseg)
+````
+    $config = [
+        'thisshopkUrl' => '',
+        'appId'        => '',
+        'appSecret'    => '',
+    ];
+
+    $thisshopSDK = \PHPThisshop\ThisshopSDK::config($config);
+````
+#### [token校验](https://help.thisshop.com/article/detail/tiakiseg)
+````
+    $config = [
+        'thisshopkUrl' => '',
+        'appId'        => '',
+        'appSecret'    => '',
+        'token'        => ''
+    ];
+
+    $thisshopSDK = \PHPThisshop\ThisshopSDK::config($config);
+````
+#### [订单列表Order list ](https://help.thisshop.com/article/detail/fvkctjne)
+````
+    $config = [
+        'thisshopkUrl' => '',
+        'appId'        => '',
+        'signSecret'   => '',
+        'token'        => '',
+    ];
+
+    $thisshopSDK = \PHPThisshop\ThisshopSDK::config($config);
+    $response = $thisshopSDK->business()
+        ->withMethod('thisshop.order.list.get')
+        ->withData([
+            'orderStatus' => 0,
+        ])
+        ->post();
+    print_r($response);
 ````
